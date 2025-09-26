@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+
+        .add-assignment-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .add-assignment-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .assignment-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border-left: 6px solid;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .assignment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        .assignment-card.completed {
+            opacity: 0.7;
+            background: #f8f9fa;
+        }
+
+        .assignment-card.completed .assignment-title {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .course-eng303 { border-left-color: #155724; }
+        .course-nsd225 { border-left-color: #dc3545; }
+        .course-com505 { border-left-color: #003d7a; }
+        .course-mnd406 { border-left-color: #6f42c1; }
+        .course-mnd413 { border-left-color: #ffc107; }
+
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .course-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .course-eng303 .course-name { color: #155724; }
+        .course-nsd225 .course-name { color: #dc3545; }
+        .course-com505 .course-name { color: #003d7a; }
+        .course-mnd406 .course-name { color: #6f42c1; }
+        .course-mnd413 .course-name { color: #ffc107; }
+
+        .assignment-title {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .due-date {
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .due-today { background: #333; color: white; }
+        .due-soon { background: #333; color: white; }
+        .due-later { background: #333; color: white; }
+        .overdue { background: #333; color: white; animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .assignment-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-complete {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-complete:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit {
+            background: #fff3cd;
+            color: #333;
+        }
+
+        .btn-edit:hover {
+            background: #ffeaa7;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .todo-section {
+            margin: 40px 0;
+        }
+
+        .todo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #6c757d;
+        }
+
+        .todo-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .add-todo-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .add-todo-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .todo-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-item:hover {
+            background: #f8f9fa;
+            padding-left: 10px;
+            margin-left: -10px;
+            margin-right: -10px;
+            border-radius: 8px;
+        }
+
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #28a745;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #6c757d;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit-todo {
+            background: #fff3cd;
+            color: #333;
+        }
+
+        .btn-edit-todo:hover {
+            background: #ffeaa7;
+        }
+
+        .btn-delete-todo {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-delete-todo:hover {
+            background: #c82333;
+        }
+
+        .spectrum-header {
+            border-left-color: #007bff;
+        }
+
+        .ugirl-header {
+            border-left-color: #e83e8c;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .assignment-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .assignment-actions {
+                flex-wrap: wrap;
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+
+            .todo-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .todo-actions {
+                gap: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Abby's Fall 2025 Assignment Tracker</h1>
+        
+        <button class="add-assignment-btn" onclick="openModal()">
+            ➕ Add New Assignment
+        </button>
+        
+        <div id="assignments-container">
+            <!-- Assignments will be loaded here -->
+        </div>
+
+        <!-- Spectrum Work To-Do List -->
+        <div class="todo-section">
+            <div class="todo-header spectrum-header">
+                <div class="todo-title">🏢 Spectrum Work To-Do List</div>
+                <button class="add-todo-btn" onclick="openTodoModal('spectrum')">+ Add Task</button>
+            </div>
+            <div class="todo-list" id="spectrum-todos">
+                <!-- Spectrum todos will be loaded here -->
+            </div>
+        </div>
+
+        <!-- UGirl To-Do List -->
+        <div class="todo-section">
+            <div class="todo-header ugirl-header">
+                <div class="todo-title">💖 UGirl To-Do List</div>
+                <button class="add-todo-btn" onclick="openTodoModal('ugirl')">+ Add Task</button>
+            </div>
+            <div class="todo-list" id="ugirl-todos">
+                <!-- UGirl todos will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding todos -->
+    <div id="todo-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeTodoModal()">&times;</span>
+            <h2 id="todo-modal-title">Add New Task</h2>
+            
+            <div class="form-group">
+                <label for="todo-text">Task:</label>
+                <input type="text" id="todo-text" placeholder="Enter task description">
+            </div>
+            
+            <div class="form-group">
+                <label for="todo-due-date">Due Date (optional):</label>
+                <input type="date" id="todo-due-date">
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeTodoModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveTodo()">Save Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding/editing assignments -->
+    <div id="assignment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title">Add New Assignment</h2>
+            
+            <div class="form-group">
+                <label for="course-select">Course:</label>
+                <select id="course-select">
+                    <option value="eng303">ENG 303 - English/Creative Writing</option>
+                    <option value="nsd225">NSD 225 - Nutrition</option>
+                    <option value="com505">COM 505 - Communications/Media Law</option>
+                    <option value="mnd406">MND 406 - Magazine Article Writing</option>
+                    <option value="mnd413">MND 413 - Emerging Media Field Testing</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="assignment-title">Assignment Title:</label>
+                <input type="text" id="assignment-title" placeholder="Enter assignment title">
+            </div>
+            
+            <div class="form-group">
+                <label for="due-date">Due Date:</label>
+                <input type="date" id="due-date">
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveAssignment()">Save Assignment</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let assignments = [
+            // ENG 303 assignments
+            { id: 1, course: 'eng303', title: 'First Story Due', dueDate: '2025-09-27', completed: false },
+            { id: 2, course: 'eng303', title: 'Second Story Due', dueDate: '2025-11-15', completed: false },
+            { id: 3, course: 'eng303', title: 'Final Paper: Analysis of Stories', dueDate: '2025-12-15', completed: false },
+
+            // NSD 225 assignments
+            { id: 4, course: 'nsd225', title: 'Week 3 Homework', dueDate: '2025-09-26', completed: false },
+            { id: 5, course: 'nsd225', title: 'Diet Analysis #4 - Lipids', dueDate: '2025-09-26', completed: false },
+            { id: 6, course: 'nsd225', title: 'Week 6 Homework', dueDate: '2025-10-03', completed: false },
+            { id: 7, course: 'nsd225', title: 'Exam 1', dueDate: '2025-10-09', completed: false },
+            { id: 8, course: 'nsd225', title: 'Week 8 Homework', dueDate: '2025-10-17', completed: false },
+            { id: 9, course: 'nsd225', title: 'Week 9 Homework', dueDate: '2025-10-24', completed: false },
+            { id: 10, course: 'nsd225', title: 'Diet Analysis #5 - Energy Balance', dueDate: '2025-10-24', completed: false },
+            { id: 11, course: 'nsd225', title: 'Week 10 Homework', dueDate: '2025-10-31', completed: false },
+            { id: 12, course: 'nsd225', title: 'Week 11 Homework', dueDate: '2025-11-07', completed: false },
+            { id: 13, course: 'nsd225', title: 'Week 12 Homework', dueDate: '2025-11-14', completed: false },
+            { id: 14, course: 'nsd225', title: 'Week 13 Homework', dueDate: '2025-11-21', completed: false },
+            { id: 15, course: 'nsd225', title: 'Diet Analysis #6 - Revisiting Your Diet', dueDate: '2025-12-05', completed: false },
+            { id: 16, course: 'nsd225', title: 'Exam 2', dueDate: '2025-12-09', completed: false },
+
+            // COM 505 assignments
+            { id: 17, course: 'com505', title: 'Case Ownership Assignment', dueDate: '2025-09-30', completed: false },
+            { id: 18, course: 'com505', title: 'Case Ownership Assignment', dueDate: '2025-10-07', completed: false },
+            { id: 19, course: 'com505', title: 'Midterm Exam', dueDate: '2025-10-16', completed: false },
+            { id: 20, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-10-23', completed: false },
+            { id: 21, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-10-30', completed: false },
+            { id: 22, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-11-06', completed: false },
+            { id: 23, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-11-13', completed: false },
+            { id: 24, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-11-20', completed: false },
+            { id: 25, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-12-02', completed: false },
+            { id: 26, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-12-09', completed: false },
+            { id: 27, course: 'com505', title: 'Final Exam', dueDate: '2025-12-16', completed: false },
+
+            // MND 406 assignments
+            { id: 28, course: 'mnd406', title: 'One-paragraph update on longform', dueDate: '2025-09-24', completed: false },
+            { id: 29, course: 'mnd406', title: 'Pre-reporting + transcribed interview', dueDate: '2025-10-01', completed: false },
+            { id: 30, course: 'mnd406', title: 'Service story (300-500 words)', dueDate: '2025-10-08', completed: false },
+            { id: 31, course: 'mnd406', title: 'Lede and nut graf for longform', dueDate: '2025-10-15', completed: false },
+            { id: 32, course: 'mnd406', title: '800-word profile', dueDate: '2025-10-22', completed: false },
+            { id: 33, course: 'mnd406', title: 'Sidebar pitches', dueDate: '2025-10-29', completed: false },
+            { id: 34, course: 'mnd406', title: 'Shitty but complete first draft', dueDate: '2025-11-05', completed: false },
+            { id: 35, course: 'mnd406', title: 'Bring feature chunk to class', dueDate: '2025-11-10', completed: false },
+            { id: 36, course: 'mnd406', title: 'Personal essay (500-1000 words)', dueDate: '2025-11-17', completed: false },
+            { id: 37, course: 'mnd406', title: 'Bring feature chunk to class', dueDate: '2025-12-01', completed: false },
+            { id: 38, course: 'mnd406', title: 'FINAL FEATURE DUE', dueDate: '2025-12-08', completed: false },
+
+            // MND 413 assignments
+            { id: 39, course: 'mnd413', title: 'Custom GPT or Vibe Coded experience', dueDate: '2025-09-28', completed: false },
+            { id: 40, course: 'mnd413', title: 'XR Salon #2 reflections', dueDate: '2025-10-05', completed: false },
+            { id: 41, course: 'mnd413', title: 'Reality Capture and XR', dueDate: '2025-10-19', completed: false },
+            { id: 42, course: 'mnd413', title: 'Social XR Storytelling World', dueDate: '2025-10-26', completed: false },
+            { id: 43, course: 'mnd413', title: 'Pitch a drone story idea', dueDate: '2025-11-09', completed: false },
+            { id: 44, course: 'mnd413', title: 'Field test presentation', dueDate: '2025-11-30', completed: false },
+            { id: 45, course: 'mnd413', title: 'Final projects due', dueDate: '2025-12-07', completed: false },
+            { id: 46, course: 'mnd413', title: 'Field Test Writeup', dueDate: '2025-12-07', completed: false }
+        ];
+
+        let spectrumTodos = [];
+        let ugirlTodos = [];
+
+        let editingId = null;
+        let currentTodoList = null;
+        let editingTodoId = null;
+        const courseNames = {
+            'eng303': 'ENG 303',
+            'nsd225': 'NSD 225', 
+            'com505': 'COM 505',
+            'mnd406': 'MND 406',
+            'mnd413': 'MND 413'
+        };
+
+        function renderAssignments() {
+            const container = document.getElementById('assignments-container');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const sortedAssignments = assignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+            container.innerHTML = sortedAssignments.map(assignment => {
+                const dueDate = new Date(assignment.dueDate);
+                const diffTime = dueDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                let dueDateClass = 'due-later';
+                let dueDateText = dueDate.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+
+                if (diffDays < 0) {
+                    dueDateClass = 'overdue';
+                    dueDateText = `Overdue (${Math.abs(diffDays)} days)`;
+                } else if (diffDays === 0) {
+                    dueDateClass = 'due-today';
+                    dueDateText = 'Due Today!';
+                } else if (diffDays <= 3) {
+                    dueDateClass = 'due-soon';
+                    dueDateText = `Due in ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+                }
+
+                return `
+                    <div class="assignment-card course-${assignment.course} ${assignment.completed ? 'completed' : ''}">
+                        <div class="assignment-header">
+                            <div>
+                                <div class="course-name">${courseNames[assignment.course]}</div>
+                                <div class="assignment-title">${assignment.title}</div>
+                            </div>
+                            <div class="due-date ${dueDateClass}">
+                                ${dueDateText}
+                            </div>
+                        </div>
+                        <div class="assignment-actions">
+                            <button class="btn btn-complete" onclick="toggleComplete(${assignment.id})">
+                                ${assignment.completed ? '↩️ Undo' : '✅ Complete'}
+                            </button>
+                            <button class="btn btn-edit" onclick="editAssignment(${assignment.id})">
+                                ✏️ Edit
+                            </button>
+                            <button class="btn btn-delete" onclick="deleteAssignment(${assignment.id})">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openModal(assignmentId = null) {
+            editingId = assignmentId;
+            const modal = document.getElementById('assignment-modal');
+            const modalTitle = document.getElementById('modal-title');
+            
+            if (assignmentId) {
+                const assignment = assignments.find(a => a.id === assignmentId);
+                modalTitle.textContent = 'Edit Assignment';
+                document.getElementById('course-select').value = assignment.course;
+                document.getElementById('assignment-title').value = assignment.title;
+                document.getElementById('due-date').value = assignment.dueDate;
+            } else {
+                modalTitle.textContent = 'Add New Assignment';
+                document.getElementById('course-select').value = 'eng303';
+                document.getElementById('assignment-title').value = '';
+                document.getElementById('due-date').value = '';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('assignment-modal').style.display = 'none';
+            editingId = null;
+        }
+
+        function saveAssignment() {
+            const course = document.getElementById('course-select').value;
+            const title = document.getElementById('assignment-title').value.trim();
+            const dueDate = document.getElementById('due-date').value;
+
+            if (!title || !dueDate) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            if (editingId) {
+                const assignment = assignments.find(a => a.id === editingId);
+                assignment.course = course;
+                assignment.title = title;
+                assignment.dueDate = dueDate;
+            } else {
+                const newId = Math.max(...assignments.map(a => a.id), 0) + 1;
+                assignments.push({
+                    id: newId,
+                    course,
+                    title,
+                    dueDate,
+                    completed: false
+                });
+            }
+
+            renderAssignments();
+            closeModal();
+        }
+
+        function toggleComplete(id) {
+            const assignment = assignments.find(a => a.id === id);
+            assignment.completed = !assignment.completed;
+            renderAssignments();
+        }
+
+        function editAssignment(id) {
+            openModal(id);
+        }
+
+        function deleteAssignment(id) {
+            if (confirm('Are you sure you want to delete this assignment?')) {
+                assignments = assignments.filter(a => a.id !== id);
+                renderAssignments();
+            }
+        }
+
+        function renderTodos() {
+            renderSpectrumTodos();
+            renderUgirlTodos();
+        }
+
+        function renderSpectrumTodos() {
+            const container = document.getElementById('spectrum-todos');
+            if (spectrumTodos.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No tasks yet. Click "Add Task" to get started!</div>';
+                return;
+            }
+            
+            container.innerHTML = spectrumTodos.map(todo => {
+                let dueDateDisplay = '';
+                if (todo.dueDate) {
+                    const dueDate = new Date(todo.dueDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let dueDateClass = 'due-later';
+                    if (diffDays < 0) dueDateClass = 'overdue';
+                    else if (diffDays === 0) dueDateClass = 'due-today';
+                    else if (diffDays <= 3) dueDateClass = 'due-soon';
+                    
+                    dueDateDisplay = `<span class="due-date ${dueDateClass}" style="font-size: 12px; margin-left: 10px;">${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+                }
+                
+                return `
+                <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                    <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} 
+                           onchange="toggleTodo('spectrum', ${todo.id})">
+                    <div class="todo-text">${todo.text}${dueDateDisplay}</div>
+                    <div class="todo-actions">
+                        <button class="btn-small btn-edit-todo" onclick="editTodo('spectrum', ${todo.id})">✏️</button>
+                        <button class="btn-small btn-delete-todo" onclick="deleteTodo('spectrum', ${todo.id})">🗑️</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderUgirlTodos() {
+            const container = document.getElementById('ugirl-todos');
+            if (ugirlTodos.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No tasks yet. Click "Add Task" to get started!</div>';
+                return;
+            }
+            
+            container.innerHTML = ugirlTodos.map(todo => {
+                let dueDateDisplay = '';
+                if (todo.dueDate) {
+                    const dueDate = new Date(todo.dueDate);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const diffTime = dueDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    let dueDateClass = 'due-later';
+                    if (diffDays < 0) dueDateClass = 'overdue';
+                    else if (diffDays === 0) dueDateClass = 'due-today';
+                    else if (diffDays <= 3) dueDateClass = 'due-soon';
+                    
+                    dueDateDisplay = `<span class="due-date ${dueDateClass}" style="font-size: 12px; margin-left: 10px;">${dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>`;
+                }
+                
+                return `
+                <div class="todo-item ${todo.completed ? 'completed' : ''}">
+                    <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} 
+                           onchange="toggleTodo('ugirl', ${todo.id})">
+                    <div class="todo-text">${todo.text}${dueDateDisplay}</div>
+                    <div class="todo-actions">
+                        <button class="btn-small btn-edit-todo" onclick="editTodo('ugirl', ${todo.id})">✏️</button>
+                        <button class="btn-small btn-delete-todo" onclick="deleteTodo('ugirl', ${todo.id})">🗑️</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function openTodoModal(listType, todoId = null) {
+            currentTodoList = listType;
+            editingTodoId = todoId;
+            const modal = document.getElementById('todo-modal');
+            const modalTitle = document.getElementById('todo-modal-title');
+            
+            if (todoId) {
+                const todoList = listType === 'spectrum' ? spectrumTodos : ugirlTodos;
+                const todo = todoList.find(t => t.id === todoId);
+                modalTitle.textContent = `Edit ${listType === 'spectrum' ? 'Spectrum' : 'UGirl'} Task`;
+                document.getElementById('todo-text').value = todo.text;
+                document.getElementById('todo-due-date').value = todo.dueDate || '';
+            } else {
+                modalTitle.textContent = `Add New ${listType === 'spectrum' ? 'Spectrum' : 'UGirl'} Task`;
+                document.getElementById('todo-text').value = '';
+                document.getElementById('todo-due-date').value = '';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeTodoModal() {
+            document.getElementById('todo-modal').style.display = 'none';
+            currentTodoList = null;
+            editingTodoId = null;
+        }
+
+        function saveTodo() {
+            const text = document.getElementById('todo-text').value.trim();
+            const dueDate = document.getElementById('todo-due-date').value;
+
+            if (!text) {
+                alert('Please enter a task description');
+                return;
+            }
+
+            const todoList = currentTodoList === 'spectrum' ? spectrumTodos : ugirlTodos;
+
+            if (editingTodoId) {
+                const todo = todoList.find(t => t.id === editingTodoId);
+                todo.text = text;
+                todo.dueDate = dueDate;
+            } else {
+                const newId = Math.max(...todoList.map(t => t.id), 0) + 1;
+                todoList.push({
+                    id: newId,
+                    text: text,
+                    dueDate: dueDate,
+                    completed: false
+                });
+            }
+
+            renderTodos();
+            closeTodoModal();
+        }
+
+        function editTodo(listType, id) {
+            openTodoModal(listType, id);
+        }
+
+        function toggleTodo(listType, id) {
+            const todoList = listType === 'spectrum' ? spectrumTodos : ugirlTodos;
+            const todo = todoList.find(t => t.id === id);
+            todo.completed = !todo.completed;
+            renderTodos();
+        }
+
+        function deleteTodo(listType, id) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                if (listType === 'spectrum') {
+                    spectrumTodos = spectrumTodos.filter(t => t.id !== id);
+                } else {
+                    ugirlTodos = ugirlTodos.filter(t => t.id !== id);
+                }
+                renderTodos();
+            }
+        }
+
+        window.onclick = function(event) {
+            const assignmentModal = document.getElementById('assignment-modal');
+            const todoModal = document.getElementById('todo-modal');
+            if (event.target === assignmentModal) {
+                closeModal();
+            }
+            if (event.target === todoModal) {
+                closeTodoModal();
+            }
+        }
+
+        renderAssignments();
+        renderTodos();
+    </script>
+</body>
+</html>
