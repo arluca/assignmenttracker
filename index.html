@@ -507,13 +507,15 @@
     </div>
 
     <script>
-        let assignments = [
-            // ENG 303 assignments
+        let assignmentsData = {};
+        let spectrumTodosData = {};
+        let ugirlTodosData = {};
+
+        // Default assignments
+        const defaultAssignments = [
             { id: 1, course: 'eng303', title: 'First Story Due', dueDate: '2025-09-27', completed: false },
             { id: 2, course: 'eng303', title: 'Second Story Due', dueDate: '2025-11-15', completed: false },
             { id: 3, course: 'eng303', title: 'Final Paper: Analysis of Stories', dueDate: '2025-12-15', completed: false },
-
-            // NSD 225 assignments
             { id: 4, course: 'nsd225', title: 'Week 3 Homework', dueDate: '2025-09-26', completed: false },
             { id: 5, course: 'nsd225', title: 'Diet Analysis #4 - Lipids', dueDate: '2025-09-26', completed: false },
             { id: 6, course: 'nsd225', title: 'Week 6 Homework', dueDate: '2025-10-03', completed: false },
@@ -527,8 +529,6 @@
             { id: 14, course: 'nsd225', title: 'Week 13 Homework', dueDate: '2025-11-21', completed: false },
             { id: 15, course: 'nsd225', title: 'Diet Analysis #6 - Revisiting Your Diet', dueDate: '2025-12-05', completed: false },
             { id: 16, course: 'nsd225', title: 'Exam 2', dueDate: '2025-12-09', completed: false },
-
-            // COM 505 assignments (extracted from calendar images)
             { id: 17, course: 'com505', title: 'Case Ownership Assignment', dueDate: '2025-09-30', completed: false },
             { id: 18, course: 'com505', title: 'Case Ownership Assignment', dueDate: '2025-10-07', completed: false },
             { id: 19, course: 'com505', title: 'Midterm Exam', dueDate: '2025-10-16', completed: false },
@@ -540,8 +540,6 @@
             { id: 25, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-12-02', completed: false },
             { id: 26, course: 'com505', title: 'Case Reading Assignment', dueDate: '2025-12-09', completed: false },
             { id: 27, course: 'com505', title: 'Final Exam', dueDate: '2025-12-16', completed: false },
-
-            // MND 406 assignments
             { id: 28, course: 'mnd406', title: 'One-paragraph update on longform', dueDate: '2025-09-24', completed: false },
             { id: 29, course: 'mnd406', title: 'Pre-reporting + transcribed interview', dueDate: '2025-10-01', completed: false },
             { id: 30, course: 'mnd406', title: 'Service story (300-500 words)', dueDate: '2025-10-08', completed: false },
@@ -553,8 +551,6 @@
             { id: 36, course: 'mnd406', title: 'Personal essay (500-1000 words)', dueDate: '2025-11-17', completed: false },
             { id: 37, course: 'mnd406', title: 'Bring feature chunk to class', dueDate: '2025-12-01', completed: false },
             { id: 38, course: 'mnd406', title: 'FINAL FEATURE DUE', dueDate: '2025-12-08', completed: false },
-
-            // MND 413 assignments
             { id: 39, course: 'mnd413', title: 'Custom GPT or Vibe Coded experience', dueDate: '2025-09-28', completed: false },
             { id: 40, course: 'mnd413', title: 'XR Salon #2 reflections', dueDate: '2025-10-05', completed: false },
             { id: 41, course: 'mnd413', title: 'Reality Capture and XR', dueDate: '2025-10-19', completed: false },
@@ -565,9 +561,40 @@
             { id: 46, course: 'mnd413', title: 'Field Test Writeup', dueDate: '2025-12-07', completed: false }
         ];
 
-        let spectrumTodos = [];
+        // Initialize data
+        function initializeData() {
+            const storedAssignments = localStorage.getItem('assignments');
+            if (storedAssignments) {
+                assignmentsData = JSON.parse(storedAssignments).reduce((acc, item) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+            } else {
+                assignmentsData = defaultAssignments.reduce((acc, item) => {
+                    acc[item.id] = item;
+                    return acc;
+                }, {});
+                saveData();
+            }
 
-        let ugirlTodos = [];
+            const storedSpectrum = localStorage.getItem('spectrumTodos');
+            spectrumTodosData = storedSpectrum ? JSON.parse(storedSpectrum).reduce((acc, item) => {
+                acc[item.id] = item;
+                return acc;
+            }, {}) : {};
+
+            const storedUgirl = localStorage.getItem('ugirlTodos');
+            ugirlTodosData = storedUgirl ? JSON.parse(storedUgirl).reduce((acc, item) => {
+                acc[item.id] = item;
+                return acc;
+            }, {}) : {};
+        }
+
+        function saveData() {
+            localStorage.setItem('assignments', JSON.stringify(Object.values(assignmentsData)));
+            localStorage.setItem('spectrumTodos', JSON.stringify(Object.values(spectrumTodosData)));
+            localStorage.setItem('ugirlTodos', JSON.stringify(Object.values(ugirlTodosData)));
+        }
 
         let editingId = null;
         let currentTodoList = null;
@@ -585,14 +612,14 @@
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Sort assignments by due date
+            const assignments = Object.values(assignmentsData);
             const sortedAssignments = assignments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
             container.innerHTML = sortedAssignments.map(assignment => {
                 const dueDate = new Date(assignment.dueDate);
-                dueDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+                dueDate.setHours(0, 0, 0, 0);
                 const diffTime = dueDate - today;
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Changed from Math.ceil to Math.round
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
                 
                 let dueDateClass = 'due-later';
                 let dueDateText = dueDate.toLocaleDateString('en-US', { 
@@ -645,7 +672,7 @@
             const modalTitle = document.getElementById('modal-title');
             
             if (assignmentId) {
-                const assignment = assignments.find(a => a.id === assignmentId);
+                const assignment = assignmentsData[assignmentId];
                 modalTitle.textContent = 'Edit Assignment';
                 document.getElementById('course-select').value = assignment.course;
                 document.getElementById('assignment-title').value = assignment.title;
@@ -676,28 +703,28 @@
             }
 
             if (editingId) {
-                const assignment = assignments.find(a => a.id === editingId);
-                assignment.course = course;
-                assignment.title = title;
-                assignment.dueDate = dueDate;
+                assignmentsData[editingId].course = course;
+                assignmentsData[editingId].title = title;
+                assignmentsData[editingId].dueDate = dueDate;
             } else {
-                const newId = Math.max(...assignments.map(a => a.id), 0) + 1;
-                assignments.push({
+                const newId = Math.max(...Object.keys(assignmentsData).map(Number), 0) + 1;
+                assignmentsData[newId] = {
                     id: newId,
                     course,
                     title,
                     dueDate,
                     completed: false
-                });
+                };
             }
 
+            saveData();
             renderAssignments();
             closeModal();
         }
 
         function toggleComplete(id) {
-            const assignment = assignments.find(a => a.id === id);
-            assignment.completed = !assignment.completed;
+            assignmentsData[id].completed = !assignmentsData[id].completed;
+            saveData();
             renderAssignments();
         }
 
@@ -707,14 +734,11 @@
 
         function deleteAssignment(id) {
             if (confirm('Are you sure you want to delete this assignment?')) {
-                assignments = assignments.filter(a => a.id !== id);
+                delete assignmentsData[id];
+                saveData();
                 renderAssignments();
             }
         }
-
-        // Initialize the app
-        renderAssignments();
-        renderTodos();
 
         function renderTodos() {
             renderSpectrumTodos();
@@ -723,12 +747,14 @@
 
         function renderSpectrumTodos() {
             const container = document.getElementById('spectrum-todos');
-            if (spectrumTodos.length === 0) {
+            const todos = Object.values(spectrumTodosData);
+            
+            if (todos.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No tasks yet. Click "Add Task" to get started!</div>';
                 return;
             }
             
-            container.innerHTML = spectrumTodos.map(todo => {
+            container.innerHTML = todos.map(todo => {
                 let dueDateDisplay = '';
                 if (todo.dueDate) {
                     const dueDate = new Date(todo.dueDate);
@@ -736,7 +762,7 @@
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     const diffTime = dueDate - today;
-                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Changed from Math.ceil to Math.round
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
                     
                     let dueDateClass = 'due-later';
                     if (diffDays < 0) dueDateClass = 'overdue';
@@ -762,12 +788,14 @@
 
         function renderUgirlTodos() {
             const container = document.getElementById('ugirl-todos');
-            if (ugirlTodos.length === 0) {
+            const todos = Object.values(ugirlTodosData);
+            
+            if (todos.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #6c757d; padding: 20px;">No tasks yet. Click "Add Task" to get started!</div>';
                 return;
             }
             
-            container.innerHTML = ugirlTodos.map(todo => {
+            container.innerHTML = todos.map(todo => {
                 let dueDateDisplay = '';
                 if (todo.dueDate) {
                     const dueDate = new Date(todo.dueDate);
@@ -775,7 +803,7 @@
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
                     const diffTime = dueDate - today;
-                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // Changed from Math.ceil to Math.round
+                    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
                     
                     let dueDateClass = 'due-later';
                     if (diffDays < 0) dueDateClass = 'overdue';
@@ -806,8 +834,8 @@
             const modalTitle = document.getElementById('todo-modal-title');
             
             if (todoId) {
-                const todoList = listType === 'spectrum' ? spectrumTodos : ugirlTodos;
-                const todo = todoList.find(t => t.id === todoId);
+                const todoData = listType === 'spectrum' ? spectrumTodosData : ugirlTodosData;
+                const todo = todoData[todoId];
                 modalTitle.textContent = `Edit ${listType === 'spectrum' ? 'Spectrum' : 'UGirl'} Task`;
                 document.getElementById('todo-text').value = todo.text;
                 document.getElementById('todo-due-date').value = todo.dueDate || '';
@@ -835,22 +863,22 @@
                 return;
             }
 
-            const todoList = currentTodoList === 'spectrum' ? spectrumTodos : ugirlTodos;
+            const todoData = currentTodoList === 'spectrum' ? spectrumTodosData : ugirlTodosData;
 
             if (editingTodoId) {
-                const todo = todoList.find(t => t.id === editingTodoId);
-                todo.text = text;
-                todo.dueDate = dueDate;
+                todoData[editingTodoId].text = text;
+                todoData[editingTodoId].dueDate = dueDate;
             } else {
-                const newId = Math.max(...todoList.map(t => t.id), 0) + 1;
-                todoList.push({
+                const newId = Math.max(...Object.keys(todoData).map(Number), 0) + 1;
+                todoData[newId] = {
                     id: newId,
                     text: text,
                     dueDate: dueDate,
                     completed: false
-                });
+                };
             }
 
+            saveData();
             renderTodos();
             closeTodoModal();
         }
@@ -860,26 +888,21 @@
         }
 
         function toggleTodo(listType, id) {
-            const todoList = listType === 'spectrum' ? spectrumTodos : ugirlTodos;
-            const todo = todoList.find(t => t.id === id);
-            if (todo) {
-                todo.completed = !todo.completed;
-                renderTodos();
-            }
+            const todoData = listType === 'spectrum' ? spectrumTodosData : ugirlTodosData;
+            todoData[id].completed = !todoData[id].completed;
+            saveData();
+            renderTodos();
         }
 
         function deleteTodo(listType, id) {
             if (confirm('Are you sure you want to delete this task?')) {
-                if (listType === 'spectrum') {
-                    spectrumTodos = spectrumTodos.filter(t => t.id !== id);
-                } else {
-                    ugirlTodos = ugirlTodos.filter(t => t.id !== id);
-                }
+                const todoData = listType === 'spectrum' ? spectrumTodosData : ugirlTodosData;
+                delete todoData[id];
+                saveData();
                 renderTodos();
             }
         }
 
-        // Close modal when clicking outside
         window.onclick = function(event) {
             const assignmentModal = document.getElementById('assignment-modal');
             const todoModal = document.getElementById('todo-modal');
@@ -890,6 +913,11 @@
                 closeTodoModal();
             }
         }
+
+        // Initialize
+        initializeData();
+        renderAssignments();
+        renderTodos();
     </script>
 </body>
 </html>
